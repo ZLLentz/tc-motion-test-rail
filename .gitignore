@@ -21,3 +21,6 @@ dbd
 
 # Vim ignores
 *.swp
+
+# Output from scope ignores
+*.csv

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_Tuning" Id="{60cb0d99-d743-4cf9-88e5-d9f3659b8aa0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Tuning
+VAR_INPUT
+	bReset: BOOL;
+	Axis: AXIS_REF;
+	fDeadBand: LREAL;
+	fEncRes: LREAL;
+END_VAR
+VAR_OUTPUT
+	nSettleCount: UINT;
+	nMaxSettleCount: UINT;
+	fMaxFollowerError: LREAL;
+	fMaxFollowerErrorCount: LREAL;
+END_VAR
+VAR
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bReset THEN
+	bReset := FALSE;
+	nMaxSettleCount := 0;
+	fMaxFollowerError := 0;
+END_IF
+
+Axis.ReadStatus();
+// Settle time calculation
+IF Axis.Status.NotMoving THEN
+	IF ABS(Axis.NcToPlc.PosDiff) >= fDeadband THEN
+		nSettleCount := nSettleCount + 1;
+	END_IF
+ELSE
+	nSettleCount := 0;
+END_IF
+IF nSettleCount > nMaxSettleCount THEN
+	nMaxSettleCount := nSettleCount;
+END_IF
+
+IF ABS(Axis.NcToPlc.PosDiff) > fMaxFollowerError THEN
+	fMaxFollowerError := ABS(Axis.NcToPlc.PosDiff);
+	fMaxFollowerErrorCount := fMaxFollowerError / fEncRes;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Tuning">
+      <LineId Id="42" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="22" Count="2" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="32" Count="2" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

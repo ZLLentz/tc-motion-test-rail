@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_MicroStepCountTest" Id="{d12fc184-7092-47a4-94e5-3a29711f3d42}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MicroStepCountTest
+VAR_INPUT
+	bExecute: BOOL;
+	fStart: LREAL;
+	fEnd: LREAL;
+	fIncr: LREAL;
+	fTheoryStep: LREAL;
+END_VAR
+VAR_OUTPUT
+	bDone: BOOL;
+	nPosCount: INT := -1;
+	nTheoryCount: DINT;
+	nSteps: INT := -1;
+	nMissedSteps: INT;
+	nMaxMissCombo: INT;
+	fStepPercent: LREAL;
+END_VAR
+VAR_IN_OUT
+	Axis: AXIS_REF;
+END_VAR
+VAR
+	fbMoveStart: MC_MoveAbsolute;
+	fbStep: MC_MoveRelative;
+	fbSettleTimer: TON;
+	bStarted: BOOL;
+	bTimerLatch: BOOL;
+	bDoStep: BOOL;
+	nWaitCount: UINT;
+	fLastPosition: LREAL;
+	nMissCombo: INT;
+	nOldTheoryCount: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Goal: Move axis slightly, repeatedly, and see how many effective positions we have between two given positions.
+// Works best if fIncr is greater than the encoder noise but less than the smallest theoretical step
+fbMoveStart(Axis:=Axis,
+	Execute:=bExecute AND NOT bStarted AND NOT bDone,
+	Position:=fStart,
+	Velocity:=1);
+fbStep(Axis:=Axis,
+	Execute:=bDoStep AND bStarted AND NOT bDone,
+	Distance:=fIncr,
+	Velocity:=1);
+fbSettleTimer(IN:=fbMoveStart.Done OR fbStep.Done,
+	PT:=T#2S);
+IF fbSettleTimer.Q THEN
+	IF NOT bStarted THEN
+		bDoStep := TRUE;
+	END_IF
+	bStarted := TRUE;
+	bTimerLatch := TRUE;
+	nSteps := nSteps + 1;
+	nOldTheoryCount := nTheoryCount;
+	nTheoryCount := TRUNC((Axis.NcToPlc.ActPos - fStart)/fTheoryStep);
+	IF Axis.NcToPlc.ActPos >= fLastPosition + fIncr THEN
+		fLastPosition := Axis.NcToPlc.ActPos;
+		nPosCount := nPosCount + 1;
+		nMissCombo := 0;
+	ELSIF nTheoryCount - nOldTheoryCount >= 1 THEN
+		nMissedSteps := nMissedSteps + 1;
+		nMissCombo := nMissCombo + 1;
+		IF nMissCombo > nMaxMissCombo THEN
+			nMaxMissCombo := nMissCombo;
+		END_IF
+	END_IF
+	IF nTheoryCount > 0 THEN
+		fStepPercent := 100 * nPosCount / nTheoryCount;
+	END_IF
+	IF fLastPosition >= fEnd THEN
+		bDone := TRUE;
+	END_IF
+END_IF
+IF bTimerLatch THEN
+	bTimerLatch := bDoStep;
+	bDoStep := NOT bDoStep;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_MicroStepCountTest">
+      <LineId Id="56" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="31" Count="2" />
+      <LineId Id="46" Count="3" />
+      <LineId Id="44" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="74" Count="2" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="50" Count="1" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="86" Count="1" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="93" Count="3" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="58" Count="2" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="69" Count="1" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

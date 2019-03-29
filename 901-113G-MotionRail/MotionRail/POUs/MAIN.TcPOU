@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="MAIN" Id="{1520d8b9-efb1-4236-b6de-cd2d67e4f561}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	Axis1: AXIS_REF;
+	fbPower1: MC_POWER;
+	bEnable1: BOOL := FALSE;
+	bLimFwd1 AT %I*: BOOL;
+	bLimBwd1 AT %I*: BOOL;
+	bHome1 AT %I*: BOOL;
+	bBrake1 AT %Q*: BOOL;
+	fDeadband1: LREAL;
+	fInvDeadband1: LREAL;
+	nRawCount1 AT %I*: ULINT;
+	
+	Axis2: AXIS_REF;
+	fbPower2: MC_POWER;
+	bEnable2: BOOL := FALSE;
+	bLimFwd2 AT %I*: BOOL;
+	bLimBwd2 AT %I*: BOOL;
+	bBrake2 AT %Q*: BOOL;
+	fEnc2Raw AT %I*: LREAL;
+	fDeadband2: LREAL;
+	fInvDeadband2: LREAL;	
+	nRawCount2 AT %I*: ULINT;
+	
+	Axis3: AXIS_REF;
+	fbPower3: MC_POWER;
+	bEnable3: BOOL := FALSE;
+	bLimFwd3 AT %I*: BOOL;
+	bLimBwd3 AT %I*: BOOL;
+	bBrake3 AT %Q*: BOOL;
+	fDeadband3: LREAL;
+	fInvDeadband3: LREAL;
+	nRawCount3 AT %I*: ULINT;
+	
+	Axis4: AXIS_REF;
+	fbPower4: MC_POWER;
+	bEnable4: BOOL := FALSE;
+	bLimFwd4 AT %I*: BOOL;
+	bLimBwd4 AT %I*: BOOL;
+	bBrake4 AT %Q*: BOOL;
+	fDeadband4: LREAL;
+	fInvDeadband4: LREAL;
+	nRawCount4 AT %I*: ULINT;
+	
+	bRefZero: BOOL;
+
+	bDoTest: BOOL := FALSE;
+	fbMicroWalkTest: FB_MicroStepWalkTest;
+END_VAR
+
+    ]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Axis 1 is the standard circular motor connector + renishaw default pinout on the first channel of the first 5042
+Axis1.ReadStatus();
+fbPower1(Axis:=Axis1,
+	Enable:=bEnable1,
+	Enable_Positive:=bLimFwd1 OR TRUE,
+	Enable_Negative:=bLimBwd1);
+bBrake1 := Axis1.Status.ControlLoopClosed;
+fDeadband1 := 0.000390625 / 2;
+fInvDeadband1 := -fDeadband1;
+
+// Axis 2 is the all-in-one motor/encoder connector on the second channel of the first 5042
+Axis2.ReadStatus();
+fbPower2(Axis:=Axis2,
+	Enable:=bEnable2,
+	Enable_Positive:=NOT bLimFwd2 OR TRUE,
+	Enable_Negative:=NOT bLimBwd2 OR TRUE);
+bBrake2 := Axis2.Status.ControlLoopClosed;
+
+// Axis 3 is the stage with the magnetic encoder going to the first channel of the second 5042
+Axis3.ReadStatus();
+fbPower3(Axis:=Axis3,
+	Enable:=bEnable3,
+	Enable_Positive:=NOT bLimFwd3 OR TRUE,
+	Enable_Negative:=NOT bLimBwd3 OR TRUE);
+bBrake3 := Axis3.Status.ControlLoopClosed;
+
+// Axis 4 is Alex's stage, going to the 4th drive and into the first channel of the third 5042
+Axis4.ReadStatus();
+fbPower4(Axis:=Axis4,
+	Enable:=bEnable4,
+	Enable_Positive:=NOT bLimFwd4 OR TRUE,
+	Enable_Negative:=NOT bLimBwd4 OR TRUE);
+bBrake4 := Axis4.Status.ControlLoopClosed;
+fDeadband4 := 0.0001984375 / 2;
+fInvDeadband4 := -1 * fDeadband4;
+
+fbMicroWalkTest(bExecute:=bDoTest,
+	nSteps:=1000,
+	fDeadband:=fDeadband4 + 0.000025,
+	fLowerBound:=10,
+	fUpperBound:=55,
+	fVelocity:=1,
+	tSettleTime:=T#5S,
+	Axis:=Axis4);]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="196" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="23" Count="2" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="55" Count="4" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="100" Count="4" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="152" Count="0" />
+      <LineId Id="140" Count="7" />
+      <LineId Id="54" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
